@@ -1,51 +1,57 @@
-# MediaSync-Optimizer
+# Media Orchestrator
 
-A Python automation tool to clean, compress, and resync metadata for a photo/video library before uploading to a cloud service (Google Photos, OneDrive, etc.).
+A command-line tool that batch-processes a folder of images and videos: compressing files without visible quality loss and renaming them based on embedded capture metadata.
 
 ## Features
 
 ### Compression
-- **Images (JPG/JPEG)**: adaptive encoding optimization via Pillow, with no perceptible visual loss.
-- **Videos (MP4)**: significant size reduction via FFmpeg (H.264 codec, CRF 23), visually equivalent quality.
+- **Images (JPEG)**: adaptive re-encoding via Pillow, no perceptible visual loss.
+- **Videos (MP4)**: size reduction via FFmpeg (H.264, CRF 23), visually equivalent quality.
 
-### Metadata and renaming
-- Extracts real metadata (EXIF for photos, QuickTime/ISO for videos).
-- Automatically renames files to `YYYY-MM-DD_HHMMSS` based on actual capture date.
+### Metadata-based renaming
+- Reads embedded capture metadata via ExifTool.
+- Renames files to `YYYY-MM-DD_HHMMSS` based on their actual capture date.
 
-### Processing
-- Multi-threaded execution, optimized for I/O.
-- Modifies files in place (no redundant copies).
+### Execution
+- Multi-threaded processing (I/O-bound), configurable worker count.
+- Files are processed in place — no redundant copies are created.
+- Structured logging instead of console prints.
 
 ## Requirements
 
-```bash
-# System tools (Windows / Winget)
-winget install FFmpeg
-winget install ExifTool
+- Python 3.9+
+- [FFmpeg](https://ffmpeg.org/) available on `PATH`
+- [ExifTool](https://exiftool.org/) available on `PATH`
+- Pillow
 
-# Python dependency
+```bash
 pip install Pillow
 ```
 
 ## Usage
 
-1. Clone or download the repository.
-2. Set the target folder in the script:
-
-```python
-TARGET_FOLDER = r"C:\Path\To\Your\Folder"
+```bash
+python media_orchestrator.py <target_dir> [--workers N]
 ```
 
-3. Run the script:
+**Arguments:**
+
+| Argument      | Description                                      | Default |
+|---------------|---------------------------------------------------|---------|
+| `target_dir`  | Path to the folder containing the media files.     | required |
+| `--workers`   | Number of worker threads for parallel processing.  | 4       |
+
+**Example:**
 
 ```bash
-python orchestrateur_media.py
+python media_orchestrator.py "D:\Media\ToProcess" --workers 6
 ```
 
 ## Technical notes
 
-- Aligning the filename with the internal metadata prevents files from being misclassified by upload date in cloud services.
-- The `-codec copy` option is used during lightweight injections to preserve audio without unnecessary re-encoding.
+- Renaming files to match their embedded capture date prevents cloud services from misclassifying uploads by upload date instead of capture date.
+- Video re-encoding uses `-c:a copy` to preserve the original audio stream without re-encoding.
+- Each file is processed independently; a failure on one file is logged and does not interrupt the batch.
 
 ## License
 
